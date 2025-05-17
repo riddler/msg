@@ -44,16 +44,16 @@ defmodule Msg.Client do
   end
 
   @spec fetch_token!(credentials()) :: String.t()
-  def fetch_token!(%{client_id: id, client_secret: secret, tenant_id: tenant}) do
-    OAuth2.Client.new([
-      client_id: id,
-      client_secret: secret,
-      site: "https://login.microsoftonline.com/#{tenant}",
-      authorize_url: "/oauth2/v2.0/authorize",
-      token_url: "/oauth2/v2.0/token",
-      params: [scope: "https://graph.microsoft.com/.default"]
-    ])
-    |> OAuth2.Client.get_token!()
+  def fetch_token!(%{client_id: client_id, client_secret: client_secret, tenant_id: tenant_id}) do
+    OAuth2.Client.new(
+      strategy: OAuth2.Strategy.ClientCredentials,
+      site: "https://graph.microsoft.com",
+      client_id: client_id,
+      client_secret: client_secret,
+      token_url: "https://login.microsoftonline.com/#{tenant_id}/oauth2/v2.0/token"
+    )
+    |> OAuth2.Client.put_serializer("application/json", Jason)
+    |> OAuth2.Client.get_token!(scope: "https://graph.microsoft.com/.default")
     |> Map.get(:token)
     |> Map.get(:access_token)
   end
