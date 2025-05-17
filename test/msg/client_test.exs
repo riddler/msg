@@ -13,7 +13,7 @@ defmodule Msg.ClientTest do
     client = Msg.Client.new(@creds, token_provider)
     headers = Req.get_headers_list(client)
 
-    assert client.url == URI.parse("https://graph.microsoft.com/v1.0")
+    assert client.options.base_url == "https://graph.microsoft.com/v1.0"
     assert {"authorization", "Bearer stub-token-123"} in headers
     assert {"content-type", "application/json"} in headers
     assert {"accept", "application/json"} in headers

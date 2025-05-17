@@ -35,7 +35,7 @@ defmodule Msg.Client do
   def new(creds, token_provider \\ &fetch_token!/1) do
     access_token = token_provider.(creds)
 
-    Req.new(url: "https://graph.microsoft.com/v1.0")
+    Req.new(base_url: "https://graph.microsoft.com/v1.0")
     |> Req.Request.put_headers([
       {"authorization", "Bearer #{access_token}"},
       {"content-type", "application/json"},

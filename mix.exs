@@ -26,11 +26,14 @@ defmodule Msg.MixProject do
 
   defp deps do
     [
-      {:req, "~> 0.4"},
-      {:oauth2, "~> 2.0"},
-      {:jason, "~> 1.4"},
+      # Testing and development
+      {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:mox, "~> 1.1", only: :test},
-      {:ex_doc, "~> 0.31", only: :dev, runtime: false}
+
+      # Actual dependencies
+      {:jason, "~> 1.4"},
+      {:oauth2, "~> 2.0"},
+      {:req, "~> 0.4"}
     ]
   end
 end
