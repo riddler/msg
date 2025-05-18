@@ -46,10 +46,10 @@ defmodule Msg.Client do
   @spec fetch_token!(credentials()) :: String.t()
   def fetch_token!(%{client_id: client_id, client_secret: client_secret, tenant_id: tenant_id}) do
     OAuth2.Client.new(
-      strategy: OAuth2.Strategy.ClientCredentials,
-      site: "https://graph.microsoft.com",
       client_id: client_id,
       client_secret: client_secret,
+      site: "https://graph.microsoft.com",
+      strategy: OAuth2.Strategy.ClientCredentials,
       token_url: "https://login.microsoftonline.com/#{tenant_id}/oauth2/v2.0/token"
     )
     |> OAuth2.Client.put_serializer("application/json", Jason)
