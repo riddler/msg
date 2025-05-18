@@ -10,7 +10,7 @@ defmodule Msg.MixProject do
       elixir: "~> 1.16",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      description: "Microsoft Graph API client for Elixir",
+      description: "Micorosft Graph for Elixir",
       package: [
         licenses: ["MIT"],
         links: %{"GitHub" => "https://github.com/riddler/msg"}
