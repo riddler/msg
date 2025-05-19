@@ -21,3 +21,6 @@ msg-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Don't commit environment variables used for local testing
+.env
