@@ -1,7 +1,9 @@
 defmodule Msg.MixProject do
   use Mix.Project
 
+  @app :msg
   @version "0.2.0"
+  @source_url "https://github.com/riddler/msg"
   @deps [
     # Docs - separated out to speed up dev compilcation
     {:ex_doc, "~> 0.31", only: :docs, runtime: false},
@@ -21,17 +23,14 @@ defmodule Msg.MixProject do
 
   def project do
     [
-      app: :msg,
+      app: @app,
       version: @version,
       elixir: "~> 1.16",
       start_permanent: Mix.env() == :prod,
       deps: @deps,
       description: "Microsoft Graph for Elixir",
-      package: [
-        licenses: ["MIT"],
-        links: %{"GitHub" => "https://github.com/riddler/msg"}
-      ],
       test_coverage: [tool: ExCoveralls],
+      package: package(),
       dialyzer: [
         plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
         plt_add_apps: [:mix, :ex_unit],
@@ -43,6 +42,16 @@ defmodule Msg.MixProject do
   def application do
     [
       extra_applications: [:logger]
+    ]
+  end
+
+  defp package do
+    [
+      name: @app,
+      files: ~w(lib/msg* mix.exs README.md LICENSE),
+      licenses: ["MIT"],
+      links: %{"GitHub" => @source_url},
+      maintainers: ["Riddler Team"]
     ]
   end
 
