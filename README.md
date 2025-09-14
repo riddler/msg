@@ -15,7 +15,7 @@ This package is [available in Hex](https://hex.pm/packages/msg), and can be ins
 ```elixir
 def deps do
   [
-    {:msg, "~> 0.2"}
+    {:msg, "~> 0.3"}
   ]
 end
 ```
@@ -30,7 +30,7 @@ creds = %{
 }
 
 client = Msg.Client.new(creds)
-{:ok, %{"value" => users}} = Msg.Users.list(client)
+{:ok, users} = Msg.Users.list(client)
 ```
 
 ## Features
