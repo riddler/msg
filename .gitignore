@@ -24,3 +24,5 @@ msg-*.tar
 
 # Don't commit environment variables used for local testing
 .env
+
+/priv/plts/

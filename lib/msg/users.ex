@@ -16,12 +16,13 @@ defmodule Msg.Users do
   Corresponds to: [GET /users]
   https://learn.microsoft.com/en-us/graph/api/user-list?view=graph-rest-1.0&tabs=http
   """
-  @spec list(Req.Request.t()) :: {:ok, map()} | {:error, any()}
+  @spec list(Req.Request.t()) :: {:ok, [map()]} | {:error, any()}
   def list(client) do
     Request.get(client, "/users")
     |> case do
       {:ok, %{"value" => value}} ->
         {:ok, value}
+
       error ->
         error
     end

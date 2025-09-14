@@ -79,6 +79,7 @@ The project uses ExUnit with Mox for mocking. Integration tests are separated in
 ### Authentication Flow
 
 The library implements OAuth2 client credentials flow:
+
 1. `Msg.Client.new/1` accepts credentials (`client_id`, `client_secret`, `tenant_id`)
 2. `fetch_token!/1` exchanges credentials for access token via Azure AD
 3. Returns configured Req client with Authorization header for Graph API calls
