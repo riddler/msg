@@ -19,5 +19,11 @@ defmodule Msg.Users do
   @spec list(Req.Request.t()) :: {:ok, map()} | {:error, any()}
   def list(client) do
     Request.get(client, "/users")
+    |> case do
+      {:ok, %{"value" => value}} ->
+        {:ok, value}
+      error ->
+        error
+    end
   end
 end
