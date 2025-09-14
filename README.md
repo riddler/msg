@@ -15,7 +15,7 @@ This package is [available in Hex](https://hex.pm/packages/msg), and can be ins
 ```elixir
 def deps do
   [
-    {:msg, "~> 0.1.0"}
+    {:msg, "~> 0.2"}
   ]
 end
 ```
