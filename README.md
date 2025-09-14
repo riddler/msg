@@ -35,8 +35,8 @@ client = Msg.Client.new(creds)
 
 ## Features
 
-* Built on top of Req for HTTP requests
-* OAuth2 client credentials flow via oauth2
+- Built on top of Req for HTTP requests
+- OAuth2 client credentials flow via oauth2
 
 ## License
 
