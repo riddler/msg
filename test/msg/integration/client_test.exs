@@ -1,9 +1,10 @@
 defmodule Msg.Integration.ClientTest do
   use ExUnit.Case, async: false
 
+  @moduletag :integration
+
   alias Msg.Client
 
-  @tag :integration
   test "creates a new client and fetches an access token" do
     creds = %{
       client_id: System.fetch_env!("MICROSOFT_CLIENT_ID"),

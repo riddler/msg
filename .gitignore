@@ -26,3 +26,5 @@ msg-*.tar
 .env
 
 /priv/plts/
+
+/.claude/*.local.*
