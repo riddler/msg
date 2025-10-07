@@ -2,7 +2,7 @@ defmodule Msg.MixProject do
   use Mix.Project
 
   @app :msg
-  @version "0.3.2"
+  @version "0.3.3"
   @source_url "https://github.com/riddler/msg"
   @deps [
     # Docs - separated out to speed up dev compilcation
