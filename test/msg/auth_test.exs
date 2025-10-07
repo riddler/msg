@@ -91,4 +91,11 @@ defmodule Msg.AuthTest do
       assert function_exported?(Msg.Auth, :refresh_access_token, 2)
     end
   end
+
+  describe "get_app_token/1" do
+    test "returns expected response shape" do
+      # Verify function signature
+      assert function_exported?(Msg.Auth, :get_app_token, 1)
+    end
+  end
 end

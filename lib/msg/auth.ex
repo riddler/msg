@@ -314,6 +314,72 @@ defmodule Msg.Auth do
     end
   end
 
+  @doc """
+  Gets an access token using client credentials (application-only) flow.
+
+  This is similar to `Msg.Client.fetch_token!/1` but returns token metadata
+  for lifecycle management, making it suitable for TokenManager implementations.
+
+  ## Parameters
+
+  - `credentials` - Map with `:client_id`, `:client_secret`, and `:tenant_id`
+
+  ## Returns
+
+  - `{:ok, token_response}` - Map with access_token, expires_in, and token_type
+  - `{:error, error}` - OAuth error response
+
+  ## Examples
+
+      {:ok, token_info} = Msg.Auth.get_app_token(%{
+        client_id: "app-id",
+        client_secret: "secret",
+        tenant_id: "tenant-id"
+      })
+
+      # Store token with accurate expiry
+      expires_at = DateTime.add(DateTime.utc_now(), token_info.expires_in, :second)
+      store_token(token_info.access_token, expires_at)
+
+  ## Difference from `Msg.Client.fetch_token!/1`
+
+  - Returns `{:ok, metadata}` instead of raising
+  - Includes `expires_in` for accurate lifecycle management
+  - Designed for token managers, not immediate client creation
+  """
+  @spec get_app_token(credentials()) ::
+          {:ok, %{access_token: String.t(), expires_in: integer(), token_type: String.t()}}
+          | {:error, term()}
+  def get_app_token(%{client_id: client_id, client_secret: client_secret, tenant_id: tenant_id}) do
+    token_url = "https://login.microsoftonline.com/#{tenant_id}/oauth2/v2.0/token"
+
+    params = [
+      grant_type: "client_credentials",
+      client_id: client_id,
+      client_secret: client_secret,
+      scope: "https://graph.microsoft.com/.default"
+    ]
+
+    headers = [{"content-type", "application/x-www-form-urlencoded"}]
+    body = URI.encode_query(params)
+
+    case Req.post(token_url, headers: headers, body: body) do
+      {:ok, %{status: 200, body: response_body}} ->
+        {:ok,
+         %{
+           access_token: response_body["access_token"],
+           token_type: response_body["token_type"],
+           expires_in: response_body["expires_in"]
+         }}
+
+      {:ok, %{status: status, body: error_body}} ->
+        {:error, %{status: status, body: error_body}}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   # Private helpers
 
   defp maybe_add_state(params, nil), do: params
