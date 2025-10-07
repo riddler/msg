@@ -1,9 +1,9 @@
 defmodule Msg.Integration.UsersTest do
   use ExUnit.Case, async: false
 
-  @moduletag :integration
-
   alias Msg.{Client, Users}
+
+  @moduletag :integration
 
   setup_all do
     creds = %{

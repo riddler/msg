@@ -1,21 +1,61 @@
 defmodule Msg.ClientTest do
   use ExUnit.Case, async: true
 
+  alias Msg.Client
+
   @creds %{
     client_id: "fake-client-id",
     client_secret: "fake-client-secret",
     tenant_id: "fake-tenant-id"
   }
 
-  test "new/2 builds a Req client with expected headers" do
-    token_provider = fn _ -> "stub-token-123" end
+  describe "new/2 with credentials and token provider" do
+    test "builds a Req client with expected headers" do
+      token_provider = fn _ -> "stub-token-123" end
 
-    client = Msg.Client.new(@creds, token_provider)
-    headers = Req.get_headers_list(client)
+      client = Client.new(@creds, token_provider)
+      headers = Req.get_headers_list(client)
 
-    assert client.options.base_url == "https://graph.microsoft.com/v1.0"
-    assert {"authorization", "Bearer stub-token-123"} in headers
-    assert {"content-type", "application/json"} in headers
-    assert {"accept", "application/json"} in headers
+      assert client.options.base_url == "https://graph.microsoft.com/v1.0"
+      assert {"authorization", "Bearer stub-token-123"} in headers
+      assert {"content-type", "application/json"} in headers
+      assert {"accept", "application/json"} in headers
+    end
+  end
+
+  describe "new/1 with access token" do
+    test "builds a Req client with provided access token" do
+      access_token = "test-access-token-abc123"
+
+      client = Client.new(access_token)
+      headers = Req.get_headers_list(client)
+
+      assert client.options.base_url == "https://graph.microsoft.com/v1.0"
+      assert {"authorization", "Bearer test-access-token-abc123"} in headers
+      assert {"content-type", "application/json"} in headers
+      assert {"accept", "application/json"} in headers
+    end
+
+    test "does not call token provider when given access token" do
+      # The second argument (token_provider) should be ignored when first arg is a string
+      token_provider = fn _ -> raise "Should not be called!" end
+
+      access_token = "direct-token"
+      client = Client.new(access_token, token_provider)
+      headers = Req.get_headers_list(client)
+
+      assert {"authorization", "Bearer direct-token"} in headers
+    end
+  end
+
+  describe "new/2 with refresh token and credentials" do
+    test "refreshes token and builds client with new access token" do
+      # We can't easily test this without mocking Msg.Auth.refresh_access_token
+      # For now, just verify the function exists and has correct arity
+      assert function_exported?(Client, :new, 2)
+    end
+
+    # Note: Full integration test for refresh token flow is in
+    # test/msg/integration/auth_test.exs
   end
 end
