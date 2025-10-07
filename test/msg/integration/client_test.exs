@@ -1,9 +1,9 @@
 defmodule Msg.Integration.ClientTest do
   use ExUnit.Case, async: false
 
-  @moduletag :integration
-
   alias Msg.Client
+
+  @moduletag :integration
 
   test "creates a new client and fetches an access token" do
     creds = %{

@@ -372,12 +372,12 @@ defmodule Msg.Groups do
     end
   end
 
-  defp fetch_all_pages(_client, nil, acc), do: {:ok, acc}
+  defp fetch_all_pages(_, nil, acc), do: {:ok, acc}
 
-  defp handle_error(401, _body), do: {:error, :unauthorized}
-  defp handle_error(403, _body), do: {:error, :forbidden}
-  defp handle_error(404, _body), do: {:error, :not_found}
-  defp handle_error(409, _body), do: {:error, :conflict}
+  defp handle_error(401, _), do: {:error, :unauthorized}
+  defp handle_error(403, _), do: {:error, :forbidden}
+  defp handle_error(404, _), do: {:error, :not_found}
+  defp handle_error(409, _), do: {:error, :conflict}
 
   defp handle_error(status, %{"error" => %{"message" => message}}) do
     {:error, {:graph_api_error, %{status: status, message: message}}}

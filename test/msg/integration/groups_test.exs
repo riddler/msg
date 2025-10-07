@@ -1,9 +1,9 @@
 defmodule Msg.Integration.GroupsTest do
   use ExUnit.Case, async: false
 
-  @moduletag :integration
-
   alias Msg.{Client, Groups}
+
+  @moduletag :integration
 
   setup_all do
     creds = %{
