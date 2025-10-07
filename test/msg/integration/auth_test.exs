@@ -190,4 +190,26 @@ defmodule Msg.Integration.AuthTest do
       assert String.contains?(tokens.scope, "Calendars.ReadWrite")
     end
   end
+
+  describe "get_app_token/1" do
+    test "returns access token with metadata", %{credentials: credentials} do
+      {:ok, token_info} = Auth.get_app_token(credentials)
+
+      assert is_binary(token_info.access_token)
+      assert token_info.token_type == "Bearer"
+      assert is_integer(token_info.expires_in)
+      assert token_info.expires_in > 0
+    end
+
+    test "returns error for invalid credentials" do
+      invalid_creds = %{
+        client_id: "invalid-id",
+        client_secret: "invalid-secret",
+        tenant_id: "invalid-tenant"
+      }
+
+      assert {:error, %{status: status}} = Auth.get_app_token(invalid_creds)
+      assert status == 400
+    end
+  end
 end
