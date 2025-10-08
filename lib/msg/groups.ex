@@ -48,7 +48,7 @@ defmodule Msg.Groups do
   - [Create Group](https://learn.microsoft.com/en-us/graph/api/group-post-groups)
   """
 
-  alias Msg.Request
+  alias Msg.{Pagination, Request}
 
   @doc """
   Creates a new Microsoft 365 Group.
@@ -177,9 +177,9 @@ defmodule Msg.Groups do
         []
       end
 
-    case fetch_page(client, "/groups", query_params) do
+    case Pagination.fetch_page(client, "/groups", query_params) do
       {:ok, %{items: items, next_link: next_link}} when auto_paginate and not is_nil(next_link) ->
-        fetch_all_pages(client, next_link, items)
+        Pagination.fetch_all_pages(client, next_link, items)
 
       {:ok, %{items: items, next_link: nil}} when auto_paginate ->
         {:ok, items}
@@ -320,9 +320,9 @@ defmodule Msg.Groups do
   def list_members(client, group_id, opts \\ []) do
     auto_paginate = Keyword.get(opts, :auto_paginate, true)
 
-    case fetch_page(client, "/groups/#{group_id}/members", []) do
+    case Pagination.fetch_page(client, "/groups/#{group_id}/members", []) do
       {:ok, %{items: items, next_link: next_link}} when auto_paginate and not is_nil(next_link) ->
-        fetch_all_pages(client, next_link, items)
+        Pagination.fetch_all_pages(client, next_link, items)
 
       {:ok, %{items: items, next_link: nil}} when auto_paginate ->
         {:ok, items}
@@ -336,43 +336,6 @@ defmodule Msg.Groups do
   end
 
   # Private functions
-
-  defp fetch_page(client, path, query_params) do
-    url = if query_params == [], do: path, else: path <> "?" <> URI.encode_query(query_params)
-
-    case Request.get(client, url) do
-      {:ok, %{"value" => items} = response} ->
-        next_link = Map.get(response, "@odata.nextLink")
-        {:ok, %{items: items, next_link: next_link}}
-
-      error ->
-        error
-    end
-  end
-
-  defp fetch_all_pages(client, next_link, acc) when is_binary(next_link) do
-    # Extract the path from the full URL
-    uri = URI.parse(next_link)
-    path = uri.path <> if uri.query, do: "?" <> uri.query, else: ""
-
-    case Request.get(client, path) do
-      {:ok, %{"value" => items} = response} ->
-        new_acc = acc ++ items
-
-        case Map.get(response, "@odata.nextLink") do
-          nil ->
-            {:ok, new_acc}
-
-          new_next_link ->
-            fetch_all_pages(client, new_next_link, new_acc)
-        end
-
-      error ->
-        error
-    end
-  end
-
-  defp fetch_all_pages(_, nil, acc), do: {:ok, acc}
 
   defp handle_error(401, _), do: {:error, :unauthorized}
   defp handle_error(403, _), do: {:error, :forbidden}

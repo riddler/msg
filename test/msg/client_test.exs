@@ -48,14 +48,6 @@ defmodule Msg.ClientTest do
     end
   end
 
-  describe "new/2 with refresh token and credentials" do
-    test "refreshes token and builds client with new access token" do
-      # We can't easily test this without mocking Msg.Auth.refresh_access_token
-      # For now, just verify the function exists and has correct arity
-      assert function_exported?(Client, :new, 2)
-    end
-
-    # Note: Full integration test for refresh token flow is in
-    # test/msg/integration/auth_test.exs
-  end
+  # Note: Integration tests for refresh token flow are in
+  # test/msg/integration/auth_test.exs
 end

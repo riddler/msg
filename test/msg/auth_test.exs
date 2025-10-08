@@ -71,31 +71,29 @@ defmodule Msg.AuthTest do
     end
   end
 
-  describe "exchange_code_for_tokens/3" do
-    test "returns error for network failures" do
-      # This would require mocking Req/OAuth2, which is complex
-      # The integration tests cover the success path
-      # Here we just verify the function exists and has correct arity
-      assert function_exported?(Msg.Auth, :exchange_code_for_tokens, 3)
-    end
-  end
+  describe "get_tokens_via_password/2" do
+    test "requires username in opts" do
+      credentials = %{
+        client_id: "test-client",
+        client_secret: "test-secret",
+        tenant_id: "test-tenant"
+      }
 
-  describe "refresh_access_token/3" do
-    test "accepts optional scopes parameter" do
-      # Verify function signature accepts 3 arguments
-      assert function_exported?(Msg.Auth, :refresh_access_token, 3)
+      assert_raise KeyError, fn ->
+        Auth.get_tokens_via_password(credentials, password: "test-password")
+      end
     end
 
-    test "defaults to 2-arity with empty opts" do
-      # Verify default parameter works
-      assert function_exported?(Msg.Auth, :refresh_access_token, 2)
-    end
-  end
+    test "requires password in opts" do
+      credentials = %{
+        client_id: "test-client",
+        client_secret: "test-secret",
+        tenant_id: "test-tenant"
+      }
 
-  describe "get_app_token/1" do
-    test "returns expected response shape" do
-      # Verify function signature
-      assert function_exported?(Msg.Auth, :get_app_token, 1)
+      assert_raise KeyError, fn ->
+        Auth.get_tokens_via_password(credentials, username: "test@example.com")
+      end
     end
   end
 end

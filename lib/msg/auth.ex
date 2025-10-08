@@ -380,6 +380,112 @@ defmodule Msg.Auth do
     end
   end
 
+  @doc """
+  Gets tokens using Resource Owner Password Credentials (ROPC) flow.
+
+  **WARNING:** This flow is discouraged by Microsoft and should **only be used
+  for automated testing**. It does not work with:
+
+  - Accounts with MFA enabled
+  - Federated/SSO accounts (e.g., Azure AD B2C)
+  - Personal Microsoft accounts (only works with Azure AD work/school accounts)
+
+  **Security Notes:**
+
+  - Never use in production - use authorization code flow instead
+  - Test accounts should use strong passwords despite not having MFA
+  - Rotate test account passwords regularly
+  - Restrict test account permissions to minimum required
+
+  ## Parameters
+
+  - `credentials` - Map with `:client_id`, `:client_secret`, `:tenant_id`
+  - `opts` - Keyword list:
+    - `:username` (required) - User's email/UPN
+    - `:password` (required) - User's password
+    - `:scopes` (optional) - List of scopes (defaults to Graph API default scope)
+
+  ## Returns
+
+  - `{:ok, token_response}` - Map with access_token, refresh_token, expires_in, etc.
+  - `{:error, error}` - OAuth error response
+
+  ## Examples
+
+      # For integration tests only
+      {:ok, tokens} = Msg.Auth.get_tokens_via_password(
+        %{client_id: "...", client_secret: "...", tenant_id: "..."},
+        username: "testuser@contoso.onmicrosoft.com",
+        password: System.get_env("MICROSOFT_SYSTEM_USER_PASSWORD"),
+        scopes: ["Calendars.ReadWrite.Shared", "Group.ReadWrite.All", "offline_access"]
+      )
+
+      # Use access token to create client
+      client = Msg.Client.new(tokens.access_token)
+
+  ## Azure AD Setup Requirements
+
+  1. Create test user in Azure AD (e.g., testuser@yourtenant.onmicrosoft.com)
+  2. Disable MFA for this test user
+  3. In App Registration → Authentication → Advanced settings:
+     - Set "Allow public client flows" to **Yes**
+  4. Grant required permissions and admin consent
+  5. Store credentials in .env (never commit to git)
+
+  ## Common Errors
+
+  - `AADSTS50126` - Invalid username or password
+  - `AADSTS7000218` - Public client flows not enabled (see setup step 3)
+  - `AADSTS50076` - MFA required (ROPC does not support MFA)
+  - `AADSTS700016` - Application not found in tenant
+
+  ## References
+
+  - [ROPC Flow](https://learn.microsoft.com/en-us/azure/active-directory/develop/v2-oauth-ropc)
+  """
+  @spec get_tokens_via_password(credentials(), keyword()) ::
+          {:ok, token_response()} | {:error, term()}
+  def get_tokens_via_password(
+        %{client_id: client_id, client_secret: client_secret, tenant_id: tenant_id},
+        opts
+      ) do
+    username = Keyword.fetch!(opts, :username)
+    password = Keyword.fetch!(opts, :password)
+    scopes = Keyword.get(opts, :scopes, ["https://graph.microsoft.com/.default"])
+
+    token_url = "https://login.microsoftonline.com/#{tenant_id}/oauth2/v2.0/token"
+
+    params = [
+      grant_type: "password",
+      client_id: client_id,
+      client_secret: client_secret,
+      username: username,
+      password: password,
+      scope: Enum.join(scopes, " ")
+    ]
+
+    headers = [{"content-type", "application/x-www-form-urlencoded"}]
+    body = URI.encode_query(params)
+
+    case Req.post(token_url, headers: headers, body: body) do
+      {:ok, %{status: 200, body: response_body}} ->
+        {:ok,
+         %{
+           access_token: response_body["access_token"],
+           token_type: response_body["token_type"],
+           expires_in: response_body["expires_in"],
+           scope: Map.get(response_body, "scope", ""),
+           refresh_token: Map.get(response_body, "refresh_token")
+         }}
+
+      {:ok, %{status: status, body: error_body}} ->
+        {:error, %{status: status, body: error_body}}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   # Private helpers
 
   defp maybe_add_state(params, nil), do: params
