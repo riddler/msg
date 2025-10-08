@@ -50,7 +50,7 @@ defmodule Msg.Calendar.Events do
   - [Open Extensions](https://learn.microsoft.com/en-us/graph/api/resources/opentypeextension)
   """
 
-  alias Msg.Request
+  alias Msg.{Pagination, Request}
 
   @doc """
   Lists calendar events.
@@ -98,9 +98,9 @@ defmodule Msg.Calendar.Events do
 
     query_params = build_query_params(opts)
 
-    case fetch_page(client, base_path, query_params) do
+    case Pagination.fetch_page(client, base_path, query_params) do
       {:ok, %{items: items, next_link: next_link}} when auto_paginate and not is_nil(next_link) ->
-        fetch_all_pages(client, next_link, items)
+        Pagination.fetch_all_pages(client, next_link, items)
 
       {:ok, %{items: items, next_link: nil}} when auto_paginate ->
         {:ok, items}
@@ -456,91 +456,55 @@ defmodule Msg.Calendar.Events do
   end
 
   defp build_query_params(opts) do
-    query_params = []
-
-    # Add filter if provided
-    query_params =
-      case Keyword.get(opts, :filter) do
-        nil -> query_params
-        filter -> query_params ++ [{"$filter", filter}]
-      end
-
-    # Add date range filter
-    query_params =
-      case {Keyword.get(opts, :start_datetime), Keyword.get(opts, :end_datetime)} do
-        {nil, nil} ->
-          query_params
-
-        {%DateTime{} = start_dt, nil} ->
-          filter = "start/dateTime ge '#{DateTime.to_iso8601(start_dt)}'"
-          query_params ++ [{"$filter", filter}]
-
-        {nil, %DateTime{} = end_dt} ->
-          filter = "start/dateTime lt '#{DateTime.to_iso8601(end_dt)}'"
-          query_params ++ [{"$filter", filter}]
-
-        {%DateTime{} = start_dt, %DateTime{} = end_dt} ->
-          filter =
-            "start/dateTime ge '#{DateTime.to_iso8601(start_dt)}' and start/dateTime lt '#{DateTime.to_iso8601(end_dt)}'"
-
-          query_params ++ [{"$filter", filter}]
-      end
-
-    # Add select if provided
-    query_params =
-      case Keyword.get(opts, :select) do
-        nil -> query_params
-        fields when is_list(fields) -> query_params ++ [{"$select", Enum.join(fields, ",")}]
-      end
-
-    # Add orderby if provided
-    query_params =
-      case Keyword.get(opts, :orderby) do
-        nil -> query_params
-        orderby -> query_params ++ [{"$orderby", orderby}]
-      end
-
-    query_params
+    []
+    |> add_filter_param(opts)
+    |> add_date_range_filter(opts)
+    |> add_select_param(opts)
+    |> add_orderby_param(opts)
   end
 
-  defp fetch_page(client, path, query_params) do
-    url = if query_params == [], do: path, else: path <> "?" <> URI.encode_query(query_params)
-
-    case Request.get(client, url) do
-      {:ok, %{"value" => items} = response} ->
-        next_link = Map.get(response, "@odata.nextLink")
-        {:ok, %{items: items, next_link: next_link}}
-
-      error ->
-        error
+  defp add_filter_param(params, opts) do
+    case Keyword.get(opts, :filter) do
+      nil -> params
+      filter -> params ++ [{"$filter", filter}]
     end
   end
 
-  defp fetch_all_pages(client, next_link, acc) when is_binary(next_link) do
-    # Extract the path from the full URL
-    uri = URI.parse(next_link)
-    # Remove /v1.0 prefix since it's already in base_url
-    path = String.replace_prefix(uri.path, "/v1.0", "")
-    path = path <> if uri.query, do: "?" <> uri.query, else: ""
+  defp add_date_range_filter(params, opts) do
+    start_dt = Keyword.get(opts, :start_datetime)
+    end_dt = Keyword.get(opts, :end_datetime)
 
-    case Request.get(client, path) do
-      {:ok, %{"value" => items} = response} ->
-        new_acc = acc ++ items
+    case {start_dt, end_dt} do
+      {nil, nil} ->
+        params
 
-        case Map.get(response, "@odata.nextLink") do
-          nil ->
-            {:ok, new_acc}
+      {%DateTime{} = start_dt, nil} ->
+        params ++ [{"$filter", "start/dateTime ge '#{DateTime.to_iso8601(start_dt)}'"}]
 
-          new_next_link ->
-            fetch_all_pages(client, new_next_link, new_acc)
-        end
+      {nil, %DateTime{} = end_dt} ->
+        params ++ [{"$filter", "start/dateTime lt '#{DateTime.to_iso8601(end_dt)}'"}]
 
-      error ->
-        error
+      {%DateTime{} = start_dt, %DateTime{} = end_dt} ->
+        filter =
+          "start/dateTime ge '#{DateTime.to_iso8601(start_dt)}' and start/dateTime lt '#{DateTime.to_iso8601(end_dt)}'"
+
+        params ++ [{"$filter", filter}]
     end
   end
 
-  defp fetch_all_pages(_, nil, acc), do: {:ok, acc}
+  defp add_select_param(params, opts) do
+    case Keyword.get(opts, :select) do
+      nil -> params
+      fields when is_list(fields) -> params ++ [{"$select", Enum.join(fields, ",")}]
+    end
+  end
+
+  defp add_orderby_param(params, opts) do
+    case Keyword.get(opts, :orderby) do
+      nil -> params
+      orderby -> params ++ [{"$orderby", orderby}]
+    end
+  end
 
   defp handle_error(401, _), do: {:error, :unauthorized}
   defp handle_error(403, _), do: {:error, :forbidden}
