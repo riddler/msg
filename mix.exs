@@ -26,6 +26,7 @@ defmodule Msg.MixProject do
       app: @app,
       version: @version,
       elixir: "~> 1.16",
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: @deps,
       description: "Microsoft Graph for Elixir",
@@ -38,6 +39,10 @@ defmodule Msg.MixProject do
       ]
     ]
   end
+
+  # Specifies which paths to compile per environment
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 
   def application do
     [
