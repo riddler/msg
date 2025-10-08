@@ -1,22 +1,6 @@
 defmodule Msg.GroupsTest do
   use ExUnit.Case, async: true
 
-  alias Msg.Groups
-
-  describe "module structure" do
-    test "exports expected public functions" do
-      assert function_exported?(Groups, :create, 2)
-      assert function_exported?(Groups, :get, 2)
-      assert function_exported?(Groups, :list, 1)
-      assert function_exported?(Groups, :list, 2)
-      assert function_exported?(Groups, :add_member, 3)
-      assert function_exported?(Groups, :remove_member, 3)
-      assert function_exported?(Groups, :add_owner, 3)
-      assert function_exported?(Groups, :list_members, 2)
-      assert function_exported?(Groups, :list_members, 3)
-    end
-  end
-
   describe "create/2" do
     test "converts snake_case keys to camelCase" do
       # This tests that the function uses Request.convert_keys

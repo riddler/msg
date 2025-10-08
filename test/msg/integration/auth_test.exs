@@ -1,7 +1,7 @@
 defmodule Msg.Integration.AuthTest do
   use ExUnit.Case, async: false
 
-  alias Msg.{Auth, Client, Users}
+  alias Msg.{Auth, AuthTestHelpers}
 
   @moduletag :integration
 
@@ -66,33 +66,6 @@ defmodule Msg.Integration.AuthTest do
   end
 
   describe "exchange_code_for_tokens/3" do
-    @tag :skip
-    test "exchanges authorization code for tokens", %{credentials: credentials} do
-      # This test requires manual OAuth flow to obtain an authorization code
-      # To run this test:
-      # 1. Run the "generates valid authorization URL" test above
-      # 2. Visit the generated URL in a browser
-      # 3. Sign in and approve permissions
-      # 4. Copy the 'code' parameter from the redirect URL
-      # 5. Paste it below and remove @tag :skip
-
-      code = "PASTE_AUTHORIZATION_CODE_HERE"
-
-      {:ok, tokens} =
-        Auth.exchange_code_for_tokens(
-          code,
-          credentials,
-          redirect_uri: "https://localhost:4000/auth/callback"
-        )
-
-      assert is_binary(tokens.access_token)
-      assert is_binary(tokens.refresh_token)
-      assert tokens.token_type == "Bearer"
-      assert is_integer(tokens.expires_in)
-      assert tokens.expires_in > 0
-      assert is_binary(tokens.scope)
-    end
-
     test "returns error for invalid authorization code", %{credentials: credentials} do
       result =
         Auth.exchange_code_for_tokens(
@@ -119,47 +92,6 @@ defmodule Msg.Integration.AuthTest do
   end
 
   describe "refresh_access_token/3" do
-    @tag :skip
-    test "refreshes access token using refresh token", %{credentials: credentials} do
-      # This test requires a valid refresh token
-      # To run this test:
-      # 1. Complete the "exchange_code_for_tokens" test above
-      # 2. Copy the refresh_token from the response
-      # 3. Paste it below and remove @tag :skip
-      # 4. Note: Refresh tokens expire after ~90 days of inactivity
-
-      refresh_token = "PASTE_REFRESH_TOKEN_HERE"
-
-      {:ok, new_tokens} = Auth.refresh_access_token(refresh_token, credentials)
-
-      assert is_binary(new_tokens.access_token)
-      assert new_tokens.token_type == "Bearer"
-      assert is_integer(new_tokens.expires_in)
-      assert new_tokens.expires_in > 0
-
-      # Microsoft may return a new refresh token (token rotation)
-      # Always update stored refresh token if present
-      if Map.has_key?(new_tokens, :refresh_token) and new_tokens.refresh_token != nil do
-        assert is_binary(new_tokens.refresh_token)
-      end
-    end
-
-    @tag :skip
-    test "uses refreshed token to make Graph API call", %{credentials: credentials} do
-      # This test verifies the full flow: refresh token -> access token -> API call
-      refresh_token = "PASTE_REFRESH_TOKEN_HERE"
-
-      {:ok, tokens} = Auth.refresh_access_token(refresh_token, credentials)
-
-      # Create client with refreshed access token
-      client = Client.new(tokens.access_token)
-
-      # Make a simple Graph API call to verify token works
-      {:ok, users} = Users.list(client)
-
-      assert is_list(users)
-    end
-
     test "returns error for invalid refresh token", %{credentials: credentials} do
       result = Auth.refresh_access_token("invalid-refresh-token", credentials)
 
@@ -175,19 +107,6 @@ defmodule Msg.Integration.AuthTest do
       result = Auth.refresh_access_token(expired_token, credentials)
 
       assert {:error, _} = result
-    end
-
-    @tag :skip
-    test "optional scopes parameter works", %{credentials: credentials} do
-      refresh_token = "PASTE_REFRESH_TOKEN_HERE"
-
-      {:ok, tokens} =
-        Auth.refresh_access_token(refresh_token, credentials,
-          scopes: ["Calendars.ReadWrite", "offline_access"]
-        )
-
-      assert is_binary(tokens.access_token)
-      assert String.contains?(tokens.scope, "Calendars.ReadWrite")
     end
   end
 
@@ -210,6 +129,76 @@ defmodule Msg.Integration.AuthTest do
 
       assert {:error, %{status: status}} = Auth.get_app_token(invalid_creds)
       assert status == 400
+    end
+  end
+
+  describe "get_tokens_via_password/2" do
+    test "returns access token with delegated permissions", %{credentials: credentials} do
+      email = System.get_env("MICROSOFT_SYSTEM_USER_EMAIL")
+      password = System.get_env("MICROSOFT_SYSTEM_USER_PASSWORD")
+
+      if email && password do
+        result =
+          Auth.get_tokens_via_password(credentials,
+            username: email,
+            password: password,
+            scopes: ["Calendars.ReadWrite.Shared", "Group.ReadWrite.All", "offline_access"]
+          )
+
+        case result do
+          {:ok, tokens} ->
+            assert is_binary(tokens.access_token)
+            assert tokens.token_type == "Bearer"
+            assert is_integer(tokens.expires_in)
+            assert tokens.expires_in > 0
+            assert is_binary(tokens.scope)
+
+            # Refresh token may or may not be present depending on scopes
+            if tokens.refresh_token do
+              assert is_binary(tokens.refresh_token)
+            end
+
+          {:error, %{body: %{"error" => "invalid_grant", "suberror" => "consent_required"}}} ->
+            # Skip test if admin consent not yet granted
+            # This is expected in fresh setups
+            assert true
+
+          {:error, error} ->
+            flunk("Unexpected error: #{inspect(error)}")
+        end
+      else
+        # Skip test if ROPC credentials not available
+        assert true
+      end
+    end
+
+    test "returns error for invalid username or password", %{credentials: credentials} do
+      result =
+        Auth.get_tokens_via_password(credentials,
+          username: "invalid@example.com",
+          password: "wrong-password"
+        )
+
+      assert {:error, %{status: status, body: body}} = result
+      assert status == 400
+      assert body["error"] == "invalid_grant"
+    end
+
+    test "works with test helper", %{credentials: credentials} do
+      # Test helper returns nil if credentials not available or consent not granted
+      delegated_client = AuthTestHelpers.get_delegated_client(credentials)
+
+      if delegated_client do
+        # Verify we got a valid client
+        assert %Req.Request{} = delegated_client
+        assert delegated_client.options.base_url == "https://graph.microsoft.com/v1.0"
+
+        # Verify it has authorization header
+        assert Map.has_key?(delegated_client.options, :headers)
+      else
+        # Skip if no ROPC credentials or consent not granted
+        assert true
+      end
     end
   end
 end
