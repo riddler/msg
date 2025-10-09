@@ -20,7 +20,4 @@ if File.exists?(".env") do
   end)
 end
 
-# Load test support files
-Code.require_file("test/support/auth_test_helpers.ex")
-
 ExUnit.start()
