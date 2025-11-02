@@ -148,7 +148,8 @@ defmodule Msg.Calendar.Events do
   @spec get(Req.Request.t(), String.t(), keyword()) :: {:ok, map()} | {:error, term()}
   def get(client, event_id, opts) do
     base_path = build_base_path(opts)
-    path = "#{base_path}/#{event_id}"
+    encoded_event_id = URI.encode(event_id, &URI.char_unreserved?/1)
+    path = "#{base_path}/#{encoded_event_id}"
 
     query_params = []
 
@@ -273,7 +274,8 @@ defmodule Msg.Calendar.Events do
           {:ok, map()} | {:error, term()}
   def update(client, event_id, updates, opts) do
     base_path = build_base_path(opts)
-    path = "#{base_path}/#{event_id}"
+    encoded_event_id = URI.encode(event_id, &URI.char_unreserved?/1)
+    path = "#{base_path}/#{encoded_event_id}"
     updates_converted = Request.convert_keys(updates)
 
     case Req.patch(client, url: path, json: updates_converted) do
@@ -315,7 +317,8 @@ defmodule Msg.Calendar.Events do
   @spec delete(Req.Request.t(), String.t(), keyword()) :: :ok | {:error, term()}
   def delete(client, event_id, opts) do
     base_path = build_base_path(opts)
-    path = "#{base_path}/#{event_id}"
+    encoded_event_id = URI.encode(event_id, &URI.char_unreserved?/1)
+    path = "#{base_path}/#{encoded_event_id}"
 
     case Req.delete(client, url: path) do
       {:ok, %{status: 204}} ->
@@ -431,12 +434,25 @@ defmodule Msg.Calendar.Events do
           {:ok, map()} | {:error, term()}
   def get_with_extensions(client, event_id, extension_id, opts) do
     base_path = build_base_path(opts)
-    resource_path = "#{base_path}/#{event_id}"
+    encoded_event_id = URI.encode(event_id, &URI.char_unreserved?/1)
+    resource_path = "#{base_path}/#{encoded_event_id}"
 
-    # Get event and specific extension
-    with {:ok, event} <- get(client, event_id, opts),
-         {:ok, extension} <- Request.get(client, "#{resource_path}/extensions/#{extension_id}") do
-      {:ok, Map.put(event, "extensions", [extension])}
+    # Get event first
+    # Note: get/3 already encodes event_id, so we pass the original
+    with {:ok, event} <- get(client, event_id, opts) do
+      # Try to get the extension, but return event without it if not found
+      case Request.get(client, "#{resource_path}/extensions/#{extension_id}") do
+        {:ok, extension} ->
+          {:ok, Map.put(event, "extensions", [extension])}
+
+        {:error, %{status: 404}} ->
+          # Extension not found, return event without extensions
+          {:ok, Map.put(event, "extensions", [])}
+
+        {:error, reason} ->
+          # Other errors should still propagate
+          {:error, reason}
+      end
     end
   end
 
