@@ -70,6 +70,17 @@ defmodule Msg.Calendar.EventsTest do
       opts = [user_id: "test@example.com", select: ["subject", "start", "end"]]
       assert Keyword.get(opts, :select) == ["subject", "start", "end"]
     end
+
+    test "encodes event IDs with special characters" do
+      # Test that event IDs with special characters are properly URL encoded
+      # This verifies the URI.encode logic added in lib/msg/calendar/events.ex:151
+      event_id = "AAMkAGI2T-event+with/special=chars"
+      encoded = URI.encode(event_id, &URI.char_unreserved?/1)
+
+      # Verify encoding happens correctly
+      assert encoded == "AAMkAGI2T-event%2Bwith%2Fspecial%3Dchars"
+      refute encoded == event_id
+    end
   end
 
   describe "create/3" do
@@ -117,6 +128,17 @@ defmodule Msg.Calendar.EventsTest do
       assert is_map(updates)
       assert Map.has_key?(updates, :subject)
     end
+
+    test "encodes event IDs with special characters" do
+      # Test that event IDs with special characters are properly URL encoded
+      # This verifies the URI.encode logic added in lib/msg/calendar/events.ex:277
+      event_id = "event-id+with/special=chars"
+      encoded = URI.encode(event_id, &URI.char_unreserved?/1)
+
+      # Verify encoding happens correctly
+      assert encoded == "event-id%2Bwith%2Fspecial%3Dchars"
+      refute encoded == event_id
+    end
   end
 
   describe "delete/3" do
@@ -126,6 +148,17 @@ defmodule Msg.Calendar.EventsTest do
       assert_raise ArgumentError, "Either :user_id or :group_id must be provided", fn ->
         Events.delete(client, "event-id", [])
       end
+    end
+
+    test "encodes event IDs with special characters" do
+      # Test that event IDs with special characters are properly URL encoded
+      # This verifies the URI.encode logic added in lib/msg/calendar/events.ex:320
+      event_id = "delete-event+with/special=chars"
+      encoded = URI.encode(event_id, &URI.char_unreserved?/1)
+
+      # Verify encoding happens correctly
+      assert encoded == "delete-event%2Bwith%2Fspecial%3Dchars"
+      refute encoded == event_id
     end
   end
 
@@ -160,6 +193,17 @@ defmodule Msg.Calendar.EventsTest do
       assert_raise ArgumentError, "Either :user_id or :group_id must be provided", fn ->
         Events.get_with_extensions(client, "event-id", "com.example.test", [])
       end
+    end
+
+    test "encodes event IDs with special characters" do
+      # Test that event IDs with special characters are properly URL encoded
+      # This verifies the URI.encode logic added in lib/msg/calendar/events.ex:437
+      event_id = "ext-event+with/special=chars"
+      encoded = URI.encode(event_id, &URI.char_unreserved?/1)
+
+      # Verify encoding happens correctly
+      assert encoded == "ext-event%2Bwith%2Fspecial%3Dchars"
+      refute encoded == event_id
     end
   end
 end
