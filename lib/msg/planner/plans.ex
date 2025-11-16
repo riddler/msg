@@ -218,6 +218,11 @@ defmodule Msg.Planner.Plans do
            json: updates_converted,
            headers: [{"If-Match", etag}]
          ) do
+      {:ok, %{status: 204}} ->
+        # Planner API returns 204 No Content for updates
+        # Fetch the updated plan to return it
+        get(client, plan_id)
+
       {:ok, %{status: status, body: body}} when status in 200..299 ->
         {:ok, body}
 

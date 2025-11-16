@@ -270,20 +270,34 @@ defmodule Mix.Tasks.Quality do
   defp run_coverage_check do
     Mix.shell().info("📊 Running test coverage check...")
 
-    # Run coveralls with mix task to show output
-    try do
-      Mix.Task.run("coveralls", [])
-      Mix.shell().info("✅ Coverage check passed")
-    rescue
-      e in Mix.Error ->
-        Mix.shell().error("❌ Coverage check failed.")
-        Mix.shell().info("💡 Run 'MIX_ENV=test mix coveralls.detail' to see uncovered lines")
+    # Run coveralls using System.cmd to capture output and exit code
+    case System.cmd("mix", ["coveralls"], stderr_to_stdout: true, env: [{"MIX_ENV", "test"}]) do
+      {output, 0} ->
+        # Show the output to user
+        Mix.shell().info(output)
+        Mix.shell().info("✅ Coverage check passed")
 
-        Mix.shell().info(
-          "💡 Add more tests to increase coverage above threshold set in coveralls.json"
-        )
+      {output, exit_code} ->
+        # Show the output to user
+        Mix.shell().info(output)
 
-        Mix.raise("Coverage check failed: #{Exception.message(e)}")
+        # Check if it's a test failure vs coverage failure
+        cond do
+          String.contains?(output, "tests, ") and
+              (String.contains?(output, "failure") or String.contains?(output, "error")) ->
+            Mix.shell().error("❌ Test failures detected.")
+            Mix.raise("Tests failed - fix failing tests before proceeding")
+
+          true ->
+            Mix.shell().error("❌ Coverage check failed.")
+            Mix.shell().info("💡 Run 'MIX_ENV=test mix coveralls.detail' to see uncovered lines")
+
+            Mix.shell().info(
+              "💡 Add more tests to increase coverage above threshold set in coveralls.json"
+            )
+
+            Mix.raise("Coverage check failed with exit code #{exit_code}")
+        end
     end
   end
 
