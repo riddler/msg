@@ -193,8 +193,8 @@ defmodule Msg.Integration.AuthTest do
         assert %Req.Request{} = delegated_client
         assert delegated_client.options.base_url == "https://graph.microsoft.com/v1.0"
 
-        # Verify it has authorization header
-        assert Map.has_key?(delegated_client.options, :headers)
+        # Verify it has authorization header (in Req, headers are at top level, not in options)
+        assert Map.has_key?(delegated_client.headers, "authorization")
       else
         # Skip if no ROPC credentials or consent not granted
         assert true

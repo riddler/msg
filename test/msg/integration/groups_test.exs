@@ -109,9 +109,7 @@ defmodule Msg.Integration.GroupsTest do
     assert "Unified" in group["groupTypes"]
 
     # Clean up - delete the created group
-    # Note: Group deletion requires DELETE /groups/{id}
-    # We'll add cleanup in a separate operation
-    cleanup_group(client, group["id"])
+    assert :ok = Groups.delete(client, group["id"])
   end
 
   test "handles error when getting non-existent group", %{client: client} do
@@ -195,15 +193,34 @@ defmodule Msg.Integration.GroupsTest do
     assert :ok = Groups.add_owner(client, group["id"], other_test_user_id)
 
     # Clean up
-    cleanup_group(client, group["id"])
+    assert :ok = Groups.delete(client, group["id"])
   end
 
-  # Helper function to clean up test groups
-  defp cleanup_group(client, group_id) do
+  test "deletes a group successfully", %{client: client} do
+    timestamp = System.system_time(:second)
+
+    attrs = %{
+      display_name: "Test Group to Delete #{timestamp}",
+      mail_enabled: true,
+      mail_nickname: "test-delete-#{timestamp}",
+      security_enabled: false,
+      group_types: ["Unified"],
+      description: "Temporary test group for delete operation"
+    }
+
+    {:ok, group} = Groups.create(client, attrs)
+    group_id = group["id"]
+
     # Delete the group
-    case Req.delete(client, url: "/groups/#{group_id}") do
-      {:ok, %{status: 204}} -> :ok
-      _ -> :ok
-    end
+    assert :ok = Groups.delete(client, group_id)
+
+    # Verify the group is deleted
+    assert {:error, :not_found} = Groups.get(client, group_id)
+  end
+
+  test "handles error when deleting non-existent group", %{client: client} do
+    fake_id = "00000000-0000-0000-0000-000000000000"
+
+    assert {:error, :not_found} = Groups.delete(client, fake_id)
   end
 end

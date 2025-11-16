@@ -43,8 +43,16 @@ defmodule Msg.Integration.Planner.PlansTest do
         {:ok, created_group} = Groups.create(app_client, group)
         group_id = created_group["id"]
 
-        # Give Azure some time to provision the group
-        Process.sleep(2000)
+        # Add the ROPC user as both owner and member (Planner requirement)
+        system_user_id = System.get_env("MICROSOFT_TEST_USER_ID")
+
+        if system_user_id do
+          :ok = Groups.add_owner(app_client, group_id, system_user_id)
+          :ok = Groups.add_member(app_client, group_id, system_user_id)
+        end
+
+        # Give Azure time to propagate group membership (needs 8+ seconds)
+        Process.sleep(8000)
 
         # Create plan (requires delegated permissions)
         {:ok, created_plan} =
@@ -113,7 +121,15 @@ defmodule Msg.Integration.Planner.PlansTest do
         {:ok, created_group} = Groups.create(app_client, group)
         group_id = created_group["id"]
 
-        Process.sleep(2000)
+        # Add the ROPC user as both owner and member (Planner requirement)
+        system_user_id = System.get_env("MICROSOFT_TEST_USER_ID")
+
+        if system_user_id do
+          :ok = Groups.add_owner(app_client, group_id, system_user_id)
+          :ok = Groups.add_member(app_client, group_id, system_user_id)
+        end
+
+        Process.sleep(8000)
 
         # Create a plan
         {:ok, plan} =

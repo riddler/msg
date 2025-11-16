@@ -81,6 +81,7 @@ defmodule Msg.AuthTestHelpers do
           Keyword.get(opts, :scopes, [
             "Calendars.ReadWrite.Shared",
             "Group.ReadWrite.All",
+            "Tasks.ReadWrite",
             "offline_access"
           ])
 

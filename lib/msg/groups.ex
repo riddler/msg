@@ -335,6 +335,52 @@ defmodule Msg.Groups do
     end
   end
 
+  @doc """
+  Deletes a Microsoft 365 Group.
+
+  **Warning:** This is a destructive operation that permanently removes the group and all
+  associated resources including the group mailbox, SharePoint site, Planner plans,
+  calendar, and Teams (if connected). Deleted groups may be recoverable from the
+  recycle bin for up to 30 days.
+
+  ## Parameters
+
+  - `client` - Authenticated Req.Request client
+  - `group_id` - ID of the group to delete
+
+  ## Returns
+
+  - `:ok` - Group deleted successfully (204 status)
+  - `{:error, :not_found}` - Group doesn't exist
+  - `{:error, :forbidden}` - Insufficient permissions
+  - `{:error, term}` - Other errors
+
+  ## Required Permissions
+
+  - `Group.ReadWrite.All` (application permission)
+
+  ## Examples
+
+      :ok = Msg.Groups.delete(client, "group-id-123")
+
+  ## See Also
+
+  - [Delete Group API](https://learn.microsoft.com/en-us/graph/api/group-delete)
+  """
+  @spec delete(Req.Request.t(), String.t()) :: :ok | {:error, term()}
+  def delete(client, group_id) do
+    case Req.delete(client, url: "/groups/#{group_id}") do
+      {:ok, %{status: 204}} ->
+        :ok
+
+      {:ok, %{status: status, body: body}} ->
+        handle_error(status, body)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   # Private functions
 
   defp handle_error(401, _), do: {:error, :unauthorized}
