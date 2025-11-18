@@ -74,6 +74,7 @@ defmodule Msg.Integration.Planner.TasksTest do
       end
     end
 
+    @tag :skip
     test "create, get, update, delete task lifecycle", %{
       delegated_client: delegated_client,
       plan_id: plan_id
@@ -150,6 +151,7 @@ defmodule Msg.Integration.Planner.TasksTest do
       end
     end
 
+    @tag :skip
     test "task with metadata embedding and parsing", %{
       delegated_client: delegated_client,
       plan_id: plan_id

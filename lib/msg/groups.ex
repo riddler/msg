@@ -139,6 +139,40 @@ defmodule Msg.Groups do
   end
 
   @doc """
+  Gets a group by mailNickname.
+
+  ## Parameters
+
+  - `client` - Authenticated Req.Request client
+  - `mail_nickname` - The mailNickname of the group to find
+
+  ## Returns
+
+  - `{:ok, group}` - Group details
+  - `{:error, :not_found}` - Group doesn't exist
+  - `{:error, term}` - Other errors
+
+  ## Examples
+
+      {:ok, group} = Msg.Groups.get_by_mail_nickname(client, "matter-smith-jones")
+  """
+  @spec get_by_mail_nickname(Req.Request.t(), String.t()) :: {:ok, map()} | {:error, term()}
+  def get_by_mail_nickname(client, mail_nickname) do
+    filter = "mailNickname eq '#{mail_nickname}'"
+
+    case list(client, filter: filter, auto_paginate: false) do
+      {:ok, %{items: [group | _]}} ->
+        {:ok, group}
+
+      {:ok, %{items: []}} ->
+        {:error, :not_found}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
   Lists all groups in the organization.
 
   ## Parameters
