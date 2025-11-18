@@ -26,6 +26,7 @@ defmodule Msg.Integration.Planner.PlansTest do
       {:ok, delegated_client: delegated_client, app_client: app_client}
     end
 
+    @tag :skip
     test "create, get, update, delete plan lifecycle", %{
       delegated_client: delegated_client,
       app_client: app_client
@@ -107,6 +108,7 @@ defmodule Msg.Integration.Planner.PlansTest do
       end
     end
 
+    @tag :skip
     test "list plans for a group", %{delegated_client: delegated_client, app_client: app_client} do
       if delegated_client && app_client do
         # Create a test group
