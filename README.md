@@ -4,7 +4,7 @@
 
 This library is designed for applications that use client credentials (application-only).
 
-Documentation can be found at [https://hexdocs.com/msg](https://hexdocs.com/msg).
+Documentation can be found at [https://hexdocs.pm/msg](https://hexdocs.pm/msg).
 
 ---
 
@@ -37,6 +37,8 @@ client = Msg.Client.new(creds)
 
 - Built on top of Req for HTTP requests
 - OAuth2 client credentials flow via oauth2
+- Graph API support for Users, Groups, Subscriptions, and Extensions
+- Automatic pagination handling
 
 ## License
 

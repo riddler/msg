@@ -113,6 +113,11 @@ defmodule Msg.Auth do
     - `:redirect_uri` (required) - HTTPS URL where Microsoft redirects after auth
     - `:scopes` (required) - List of permission scopes to request
     - `:state` (optional) - Random string for CSRF protection (recommended)
+    - `:prompt` (optional) - Controls sign-in behavior. Values:
+      - `"select_account"` - Shows account picker (use different account than current session)
+      - `"login"` - Forces credential entry (no SSO)
+      - `"consent"` - Shows consent dialog after sign-in
+      - `"none"` - No interactive prompt (fails if interaction required)
 
   ## Returns
 
@@ -142,6 +147,7 @@ defmodule Msg.Auth do
     redirect_uri = Keyword.fetch!(opts, :redirect_uri)
     scopes = Keyword.fetch!(opts, :scopes)
     state = Keyword.get(opts, :state)
+    prompt = Keyword.get(opts, :prompt)
 
     query_params =
       [
@@ -152,6 +158,7 @@ defmodule Msg.Auth do
         response_mode: "query"
       ]
       |> maybe_add_state(state)
+      |> maybe_add_prompt(prompt)
       |> URI.encode_query()
 
     "https://login.microsoftonline.com/#{tenant_id}/oauth2/v2.0/authorize?#{query_params}"
@@ -490,6 +497,9 @@ defmodule Msg.Auth do
 
   defp maybe_add_state(params, nil), do: params
   defp maybe_add_state(params, state), do: Keyword.put(params, :state, state)
+
+  defp maybe_add_prompt(params, nil), do: params
+  defp maybe_add_prompt(params, prompt), do: Keyword.put(params, :prompt, prompt)
 
   defp format_token_response(%AccessToken{} = token) do
     %{
